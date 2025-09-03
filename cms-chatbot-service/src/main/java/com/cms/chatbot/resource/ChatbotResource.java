@@ -11,10 +11,7 @@ import org.springframework.stereotype.Component;
 import com.cms.chatbot.service.ChatbotService;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -162,8 +159,14 @@ public class ChatbotResource {
 
     List<Message> conversationMessages = chatbotService.getMessages(id, false);
 
+    Message askedMessage = new Message(UUID.randomUUID().toString(), askRequest.getMessage(), LocalDateTime.now(),
+        Message.Status.SENT);
+
+    conversationMessages.add(askedMessage);
+
     List<ChatRequestModel.Message> completionMessages = conversationMessages.stream()
         .filter(message -> message.isSent() || message.isReceived())
+        .sorted(Comparator.comparing(Message::getSentAt))
         .map(message -> new ChatRequestModel.Message(message.isSent(), message.getContent()))
         .collect(Collectors.toList());
 
@@ -181,7 +184,7 @@ public class ChatbotResource {
     }
 
     List<Message> messages = Arrays.asList(
-        new Message(UUID.randomUUID().toString(), askRequest.getMessage(), LocalDateTime.now(), Message.Status.SENT),
+        askedMessage,
         new Message(UUID.randomUUID().toString(), response, LocalDateTime.now(), Message.Status.RECEIVED)
     );
 
